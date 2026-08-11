@@ -20,9 +20,9 @@ Estrutura detalhada do chatbot educacional focado na criação de planos de estu
 
 ---
 
-## 3. Como o agente deverá interagir e responder aos usuários
+## 3. Como o agente deverá interagir textualmente e responder aos usuários
 
-* **Tom de Voz:** Empático, motivador, claro e estruturado.
+* **Tom:** Empático, motivador, claro e estruturado.
 * **Dinâmica de Interação:**
   * **Coleta Gradual de Dados:** O bot não deve fazer todas as perguntas de uma vez. Ele conduz uma entrevista fluida, cobrindo:
     1. **Objetivo principal** (ex.: passar no vestibular, estudar para provas finais, aprender um novo idioma).
