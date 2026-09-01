@@ -1,4 +1,7 @@
-[
+
+  {
+  "artigos": [
+    {
   {
     "titulo": "Planejamento de Ensino-Aprendizagem e Projeto Político-Pedagógico",
     "autor": "Celso S. Vasconcellos",
@@ -30,3 +33,4 @@
     "link_pdf": "https://journals.sagepub.com/doi/pdf/10.1177/1529100612453266"
   }
 ]
+  }
