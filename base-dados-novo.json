@@ -1,0 +1,32 @@
+[
+  {
+    "titulo": "Planejamento de Ensino-Aprendizagem e Projeto Político-Pedagógico",
+    "autor": "Celso S. Vasconcellos",
+    "ano": 2000,
+    "link_pdf": null
+  },
+  {
+    "titulo": "CLASS: A Design Framework for Building Intelligent Tutoring Systems Based on Learning Science Principles",
+    "autor": "Shashank Sonkar, Naiming Liu, Debshila Basu Mallick, Richard G. Baraniuk",
+    "ano": 2023,
+    "link_pdf": "https://aclanthology.org/2023.findings-emnlp.130.pdf"
+  },
+  {
+    "titulo": "Uma Didática para a Pedagogia Histórico-Crítica",
+    "autor": "Ramon Missias Moreira",
+    "ano": 2008,
+    "link_pdf": "https://periodicos2.uesb.br/praxis/article/download/567/461/900"
+  },
+  {
+    "titulo": "Organizing Instruction and Study to Improve Student Learning",
+    "autor": "Harold Pashler, Patrice M. Bain, Brian A. Bottge, Arthur Graesser, Kenneth Koedinger, Mark McDaniel, Janet Metcalfe",
+    "ano": 2007,
+    "link_pdf": "https://files.eric.ed.gov/fulltext/ED498555.pdf"
+  },
+  {
+    "titulo": "Improving Students' Learning With Effective Learning Techniques: Promising Directions From Cognitive and Educational Psychology",
+    "autor": "John Dunlosky, Katherine A. Rawson, Elizabeth J. Marsh, Mitchell J. Nathan, Daniel T. Willingham",
+    "ano": 2013,
+    "link_pdf": "https://journals.sagepub.com/doi/pdf/10.1177/1529100612453266"
+  }
+]
