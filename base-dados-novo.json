@@ -1,6 +1,12 @@
 {
   "artigos": [
     {
+      "titulo": "Uma Didática para a Pedagogia Histórico-Crítica",
+      "autor": "Ramon Missias Moreira",
+      "ano": 2008,
+      "link_pdf": "https://raw.githubusercontent.com/vitorr2101/Projeto-Agente-IA-Educacional/main/assets/admin%2C%2BGerente%2Bda%2Brevista%2C%2Bramonmissias.pdf"
+    },
+    {
       "titulo": "A Functional Contextualist Approach to Mastery Learning in Vocational Education and Training",
       "autor": "Daniel M. Fienup et al.",
       "ano": 2018,
@@ -22,7 +28,7 @@
       "titulo": "Cognitive Architecture and Instructional Design: 20 Years Later",
       "autor": "John Sweller, Jeroen J. G. van Merriënboer, Fred Paas",
       "ano": 2019,
-      "link_pdf": "https://raw.githubusercontent.com/vitorr2101/Projeto-Agente-IA-Educacional/main/assets/Cognitive%20Architecture%20and%20Instructional%20Design:%2020%20Years%20Later.pdf"
+      "link_pdf": "https://raw.githubusercontent.com/vitorr2101/Projeto-Agente-IA-Educacional/main/assets/Cognitive%20Architecture%20and%20Instructional%20Design_%2020%20Years%20Later.pdf"
     },
     {
       "titulo": "Critical Pedagogy and the Struggle for Democracy",
@@ -52,7 +58,7 @@
       "titulo": "Pedagogia Freireana e Pedagogia Histórico-Crítica: Aproximações e Emancipação",
       "autor": "Antonio Fernando Gouvêa da Silva",
       "ano": 2015,
-      "link_pdf": "https://raw.githubusercontent.com/vitorr2101/Projeto-Agente-IA-Educacional/main/assets/Pedagogia%20freireana%20e%20pedagogia%20hist%20rico-cr%20tica.pdf"
+      "link_pdf": "https://raw.githubusercontent.com/vitorr2101/Projeto-Agente-IA-Educacional/main/assets/Pedagogia%20freireana%20e%20pedagogia%20historico-critica.pdf"
     },
     {
       "titulo": "Strategies for Recess in Schools: A Guide to Putting Strategies for Recess into Practice",
