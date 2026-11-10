@@ -65,6 +65,42 @@
       "autor": "Centers for Disease Control and Prevention (CDC) & SHAPE America",
       "ano": 2017,
       "link_pdf": "https://raw.githubusercontent.com/vitorr2101/Projeto-Agente-IA-Educacional/main/assets/RECESS%20PLANNING%20IN%20SCHOOLS.pdf"
+    },
+    {
+      "titulo": "Diretrizes Pedagógicas para Neurodiversidade e Transtorno do Espectro Autista (TEA) na Educação Inclusiva",
+      "autor": "EduPlan AI Research Team / Zac Azev",
+      "ano": 2024,
+      "link_pdf": "https://raw.githubusercontent.com/vitorr2101/Projeto-Agente-IA-Educacional/main/assets/Diretrizes_Pedagogicas_TEA_Educacao_Inclusiva.pdf"
+    },
+    {
+      "titulo": "The Development of Executive Function in Autism",
+      "autor": "Elizabeth Pellicano",
+      "ano": 2012,
+      "link_pdf": "https://raw.githubusercontent.com/vitorr2101/Projeto-Agente-IA-Educacional/main/assets/The%20Development%20of%20Executive%20Function%20in%20Autism.pdf"
+    },
+    {
+      "titulo": "Attention, Monotropism and the Autism Spectrum",
+      "autor": "Dinah Murray, Mike Lesser, Wendy Lawson",
+      "ano": 2005,
+      "link_pdf": "https://raw.githubusercontent.com/vitorr2101/Projeto-Agente-IA-Educacional/main/assets/Attention%2C%20Monotropism%20and%20the%20Autism%20Spectrum.pdf"
+    },
+    {
+      "titulo": "Universal Design for Learning (UDL) Guidelines for Neurodiversity",
+      "autor": "CAST (Center for Applied Special Technology)",
+      "ano": 2018,
+      "link_pdf": "https://raw.githubusercontent.com/vitorr2101/Projeto-Agente-IA-Educacional/main/assets/Universal%20Design%20for%20Learning%20%28UDL%29%20Guidelines%20for%20Neurodiversity.pdf"
+    },
+    {
+      "titulo": "Recommended Amount of Sleep for Pediatric Populations: A Consensus Statement",
+      "autor": "Shalini Paruthi et al.",
+      "ano": 2016,
+      "link_pdf": "https://raw.githubusercontent.com/vitorr2101/Projeto-Agente-IA-Educacional/main/assets/Recommended%20Amount%20of%20Sleep%20for%20Pediatric%20Populations.pdf"
+    },
+    {
+      "titulo": "The STEAM Learning Performance and Sustainable Inquiry Behavior of College Students",
+      "autor": "Jian-Hong Ye et al.",
+      "ano": 2022,
+      "link_pdf": "https://raw.githubusercontent.com/vitorr2101/Projeto-Agente-IA-Educacional/main/assets/The%20STEAM%20learning%20performance%20and%20sustainable.pdf"
     }
   ]
 }

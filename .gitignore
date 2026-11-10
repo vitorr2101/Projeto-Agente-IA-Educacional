@@ -1,0 +1,16 @@
+# Dependencies
+frontend/node_modules/
+node_modules/
+
+# Production build output
+frontend/dist/
+frontend/dist-ssr/
+dist/
+
+# Local env files
+*.local
+.env.local
+
+# Logs & temp files
+*.log
+.DS_Store
