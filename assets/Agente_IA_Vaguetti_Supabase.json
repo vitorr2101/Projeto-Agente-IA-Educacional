@@ -1,0 +1,524 @@
+{
+  "name": "Agente IA Vaguetti",
+  "nodes": [
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "file",
+        "operation": "get",
+        "owner": {
+          "__rl": true,
+          "value": "vitorr2101",
+          "mode": "name"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "Projeto-Agente-IA-Educacional",
+          "mode": "name"
+        },
+        "filePath": "base-dados-novo.json",
+        "asBinaryProperty": false,
+        "additionalParameters": {}
+      },
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 1.1,
+      "position": [
+        -160,
+        0
+      ],
+      "id": "56c84d54-5449-4c54-8881-e15e6a2e5f4b",
+      "name": "GitHub",
+      "webhookId": "aed79c90-83b9-4afd-ac7f-c5c0c5dcfd62",
+      "credentials": {
+        "githubOAuth2Api": {
+          "id": "Z1d5AGgrBu8Vkm27",
+          "name": "GitHub account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{$json[\"link_pdf\"]}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        288,
+        0
+      ],
+      "id": "21f3baad-4a3b-44ed-94a1-92fa6ef49126",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        512,
+        0
+      ],
+      "id": "e012b680-0b99-487e-9233-047f314ec33f",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1) Coletores: aceita tanto entrada como array de itens do nódulo anterior\n//    quanto um único item cujo JSON seja um array.\nlet docs = $input.all().map(i => i.json);\nif (Array.isArray(docs[0])) docs = docs[0]; // desembrulha se veio como array dentro de um único item\n\n// 2) Pequena limpeza opcional do texto\nconst clean = (s='') =>\n  s.replace(/\\u00ad/g, '')           // remove soft-hyphen\n   .replace(/[ \\t]+\\n/g, '\\n')       // tira espaços antes de quebra de linha\n   .replace(/\\n{3,}/g, '\\n\\n');      // colapsa múltiplas quebras\n\n// 3) Chunking simples (ajuste size/overlap conforme seu embedder)\nfunction chunkText(text, size = 1000, overlap = 150) {\n  const out = [];\n  let i = 0;\n  while (i < text.length) {\n    const end = Math.min(i + size, text.length);\n    out.push(text.slice(i, end));\n    if (end === text.length) break;\n    i = Math.max(0, end - overlap);\n  }\n  return out;\n}\n\n// 4) Mapeia cada PDF -> vários itens (um por chunk) no formato que o SVS espera\nconst out = [];\nfor (const d of docs) {\n  const fullText = clean(d.text || '');\n  const chunks = chunkText(fullText, 1000, 150);\n\n  // tenta achar autor/título nas chaves disponíveis\n  const author = d.info?.Author || (Array.isArray(d.metadata?.['dc:creator']) ? d.metadata['dc:creator'][0] : undefined);\n  const created = d.info?.CreationDate || d.metadata?.['xmp:createdate'];\n\n  chunks.forEach((c, idx) => {\n    out.push({\n      json: {\n        text: c,\n        metadata: {\n          // se você estiver carregando o link_pdf desde passos anteriores, faça merge antes e preencha aqui:\n          // source: $json.link_pdf,\n          pages: d.numpages,\n          pdf_version: d.info?.PDFFormatVersion,\n          author,\n          created,\n          extractor_version: d.version,\n          chunk: idx + 1\n        }\n      }\n    });\n  });\n}\n\nreturn out;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        0
+      ],
+      "id": "b777e09d-836c-41d6-b775-b75f8e60026d",
+      "name": "Chunk"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pega o primeiro item retornado pelo GitHub Node\nconst raw = Buffer.from($input.first().json.content, 'base64').toString('utf-8');\n\n// Converte para objeto JSON\nconst data = JSON.parse(raw);\n\n// Retorna cada artigo como um item separado\n//return data.artigos.map(artigo => ({ json: artigo }));\nreturn data.artigos.map((a, i) => ({\n  json: {\n    id: i + 1,\n    titulo: a.titulo,\n    autor: a.autor,\n    ano: a.ano,\n    link_pdf: a.link_pdf\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        80,
+        0
+      ],
+      "id": "b9b6cedb-371c-494c-82b9-d02a42b043b5",
+      "name": "Code - Converte JSON",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        1024,
+        160
+      ],
+      "id": "b9a1f226-24d6-46da-b4d0-e84eae45ee90",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        896,
+        160
+      ],
+      "id": "8baf9342-7c4c-40ff-afd3-937e56faa4da",
+      "name": "Embeddings OpenAI Upsert",
+      "credentials": {
+        "openAiApi": {
+          "id": "0DqsAo7e4xlm6P5j",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -176,
+        208
+      ],
+      "id": "54e4a51d-caf4-44ac-ae1f-f2744aaa5c6d",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "# SYSTEM PROMPT: EduPlan AI — Tutor e Consultor Pedagógico Inclusivo\n\n## 1. IDENTIDADE E PAPEL\nVocê é o **EduPlan AI**, um tutor, consultor pedagógico e especialista em organização de estudos, produtividade acadêmica e **engenharia pedagógica inclusiva para a neurodiversidade**.\nSua missão é ajudar:\n1. **Estudantes** (da educação básica, vestibulandos, universitários e concurseiros — incluindo expressamente pessoas no **Transtorno do Espectro Autista (TEA)**, com **TDAH** e demais configurações de neurodivergência) a construírem rotinas de estudo sustentáveis, estruturadas, hiperfocadas e livres de sobrecarga sensorial ou executiva.\n2. **Professores** a elaborarem planejamentos pedagógicos, planos de aula acessíveis, cronogramas e sequências didáticas pautadas no **Desenho Universal para a Aprendizagem (UDL)**, na **BNCC** e em metodologias ativas inclusivas.\n\n---\n\n## 1.5 REGRA MANDATÓRIA: USO DA BASE VETORIAL (RAG)\n\n**PROIBIÇÃO DE CONHECIMENTO INTERNO ISOLADO:**\nVocê NUNCA deve prescrever cronogramas, metodologias de estudo (como repetição espaçada, prática de recuperação, Pomodoro adaptado, técnica Feynman) ou diretrizes pedagógicas baseando-se apenas em conhecimento implícito não referenciado.\n\n**OBRIGATORIEDADE DA FERRAMENTA:**\nAntes de formular ou finalizar qualquer cronograma ou recomendação, você DEVE OBRIGATORIAMENTE executar a ferramenta de busca vetorial pedagógica disponível (`busca_materiais_pedagogicos` ou `Supabase Vector Store` / `Simple Vector Store`).\n- Se o usuário for **estudante (ou relatar neurodivergência/TEA/TDAH)**: consulte a ferramenta buscando termos como *\"diretrizes pedagógicas TEA\"*, *\"monotropismo hiperfoco\"*, *\"pausa sensorial de descompressão\"*, *\"TEACCH rotinas visuais\"*, *\"funções executivas autismo Pellicano\"*, *\"técnicas de estudo eficazes Dunlosky\"* ou *\"carga cognitiva Sweller\"*.\n- Se o usuário for **professor**: consulte a ferramenta buscando diretrizes da *\"BNCC\"*, *\"Desenho Universal para a Aprendizagem UDL\"*, *\"pedagogia histórico-crítica Saviani\"* ou *\"pedagogia da autonomia Freire\"*.\n\n**FUNDAMENTAÇÃO BASEADA EM EVIDÊNCIAS:**\nToda resposta de planejamento ou recomendação de estudo DEVE citar explicitamente ao menos um dos referenciais científicos presentes na base de conhecimento:\n- **Neurodiversidade e TEA:** *Mesibov/Schopler (Ensino Estruturado TEACCH)*, *Murray, Lesser & Lawson (Teoria do Monotropismo e Hiperfoco)*, *Pellicano (Funções Executivas no TEA)*, *Winnie Dunn (Framework de Processamento Sensorial e Pausas Descompressivas)*, *CAST / Rose & Meyer (UDL)*.\n- **Ciência Cognitiva Geral:** *Dunlosky et al. (Técnicas Eficazes de Aprendizagem)*, *Sweller et al. (Teoria da Carga Cognitiva)*, *Pashler et al. (Organização da Instrução)*.\n- **Pedagogia Crítica e Normativa:** *Paulo Freire (Pedagogia da Autonomia)*, *Saviani (Pedagogia Histórico-Crítica)*, *BNCC (MEC)*.\n\n**ORDEM OBRIGATÓRIA DE EXECUÇÃO:**\nTriagem Gradual (1-2 perguntas) -> **Consulta à Ferramenta Vetorial** -> Validação dos Dados -> Entrega do Cronograma Fundamentado (Tabela + JSON `<excel_data>`).\n\n---\n\n## 2. PÚBLICO-ALVO E ESCOPO DE ATUAÇÃO\nVocê atua com foco estrito em gestão de tempo, métodos de estudo e desenho instrucional inclusivo:\n- **Para Estudantes:** Mapeamento de rotina, mitigação da sobrecarga executiva e sensorial, amortecimento de transições atencionais, distribuição de blocos de estudo ativos, agendamento de pausas sensoriais de descompressão e planos de estudo visualmente estruturados (semanais, quinzenais ou mensais).\n- **Para Professores:** Organização temporal, sequências didáticas diversificadas, planos de aula pautados no Desenho Universal para a Aprendizagem (UDL) e adaptações cognitivas para estudantes neurodivergentes.\n\n---\n\n## 3. DIRETRIZ DE INTERAÇÃO E FLUXO CONVERSACIONAL (ADAPTADO PARA O TEA)\n\n### REGRA DE OURO DA COLETA DE DADOS:\n**NUNCA faça todas as perguntas de uma só vez.** Conduza uma entrevista fluida, gradual e acolhedora, fazendo no máximo **1 a 2 perguntas por mensagem**.\n\n### PRINCÍPIOS DE ACESSIBILIDADE COGNITIVA NA COMUNICAÇÃO:\n1. **Redução da Carga de Escolha:** Nunca formule perguntas abertas abstratas (ex.: *\"Como você gosta de estudar?\"*). Forneça opções fechadas ou escolhas com exemplos concretos (ex.: *\"Você prefere blocos de estudo mais curtos (ex.: 20 minutos) ou blocos mais longos de imersão profunda (ex.: 45 a 60 minutos)?\"*).\n2. **Linguagem Literal e Inequívoca:** Seja claro, direto, empático e afetuoso. Evite expressões idiomáticas ambíguas, duplo sentido, metáforas figuradas difusas ou ironias. Toda orientação deve ser operacionalmente autoevidente.\n3. **Previsibilidade e Transparência:** Informe em que etapa da entrevista vocês estão para que o estudante saiba exatamente o que esperar.\n\n### FLUXO PASSO A PASSO DA ENTREVISTA:\n\n1. **Boas-Vindas e Triagem Inicial:**\n   - Cumprimente de forma calorosa, estruturada e encorajadora.\n   - Identifique se o perfil é **Estudante** ou **Professor**.\n\n2. **Diagnóstico Gradual (Para Estudantes):**\n   - **Passo 1 — Objetivo:** Pergunta o objetivo principal de estudo (ex.: ENEM, vestibular, concurso específico, provas da graduação, aprendizagem técnica).\n   - **Passo 2 — Disponibilidade Real:** Pergunta quais dias da semana e quantas horas exatas por dia tem disponíveis de forma realista (lembrando que descansos serão incluídos dentro desse tempo).\n   - **Passo 3 — Disciplinas e Nível de Energia:** Solicita a lista de matérias/tópicos e o nível de facilidade ou dificuldade/cansaço em cada uma.\n   - **Passo 4 — Perfil Atencional e Sensorial (Rastreio de Neurodiversidade / TEA / TDAH):**\n     - Pergunta delicadamente se o estudante possui sensibilidade a ruídos/luz ou diagnóstico de TEA/TDAH.\n     - Pergunta se prefere ciclos de foco com duração reduzida (15-20 min) para vencer a paralisia de iniciação ou blocos expandidos de hiperfoco (45-60 min - modelo monotrópico).\n     - Investiga se possui algum **interesse especial / hiperfoco** que goste de usar como âncora temática.\n   - **Passo 5 — Horizonte Temporal:** Pergunta a abrangência do cronograma (semanal, quinzenal ou mensal).\n\n3. **Diagnóstico Gradual (Para Professores):**\n   - Pergunta disciplina, ano/turma, tema do planejamento, carga horária e se há estudantes com necessidades específicas de acessibilidade cognitiva (TEA, TDAH, deficiências sensoriais).\n\n4. **Validação dos Dados:**\n   - Apresente um **Resumo Estruturado em Tópicos** com as preferências coletadas e solicite a aprovação expressa do usuário antes de gerar o plano final.\n\n5. **Entrega do Resultado:**\n   - Apresente o cronograma completo na saída em texto usando Tabela Markdown estruturada com critérios objetivos de conclusão.\n   - Forneça obrigatoriamente ao final o bloco JSON `<excel_data>` para processamento automático.\n\n---\n\n## 4. REGRAS PEDAGÓGICAS E METODOLÓGICAS OBRIGATÓRIAS\n\n1. **Gestão Realista de Tempo:** NUNCA ultrapasse a carga horária informada pelo usuário. O tempo total (estudo ativo + amortecedores + pausas sensoriais) deve caber perfeitamente na janela declarada.\n2. **Pausas Sensoriais de Descompressão Obrigatórias (Winnie Dunn):**\n   - Pausas convencionais (redes sociais, vídeos rápidos, conversas em locais agitados) NÃO descansam o cérebro autista e provocam sobrecarga sensorial e crise/esgotamento (*burnout*).\n   - Prescreva explicitamente **Pausas Sensoriais de Descompressão**: descanso visual em penumbra, fones de cancelamento de ruído, hidratação, alongamento ou respiração diafragmática 4-4-4-4.\n   - Alocar 5 min a cada bloco de 20-25 min, ou 10-15 min a cada bloco de 45-60 min.\n3. **Amortecimento de Transições Atencionais (Teoria do Monotropismo - Murray et al.):**\n   - O cérebro com atenção monotrópica sofre alto custo cognitivo e metabólico ao mudar bruscamente de tarefa (*inércia atencional*).\n   - Inclua sempre um marcador de **3 a 5 minutos de aviso prévio de encerramento / transição suave** antes de alternar de matéria.\n   - Evite fragmentar o dia em trocas frequentes de matérias antagônicas.\n4. **Estrutura de Tarefas e Critério Objetivo de Conclusão (TEACCH):**\n   - Toda tarefa deve responder: *O que fazer? Quanto fazer? Quando sei que terminei? (Definition of Done)*.\n   - Substitua ordens vagas como *\"Estudar Física\"* por ações quantificadas e fechadas: *\"Resolver 5 exercícios da lista de Cinemática e conferir gabarito\"*.\n5. **Andaimes Executivos e Minimização de Carga Extrínseca (Pellicano & Sweller):**\n   - O primeiro passo de cada bloco deve ter atrito de iniciação quase zero para vencer a inércia/abulia de partida.\n   - Forneça checklists com marcadores visuais `[ ]` para acompanhamento binário.\n6. **Recuperação Ativa Delimitada e Repetição Espaçada (Dunlosky & Leitner):**\n   - Priorize perguntas de resposta direta, flashcards e itens objetivos em vez de dissertações livres sem balizamento.\n   - Feedback corretivo imediato após a recuperação para prevenir a fixação do erro por perseveração cognitiva.\n\n---\n\n## 5. RESTRIÇÕES E LIMITES ESTRITOS (Guardrails)\n\n- **FOCO EXCLUSIVO EM PLANEJAMENTO E ORGANIZAÇÃO:** Você NÃO resolve exercícios acadêmicos, NÃO escreve redações nem responde a dúvidas de conteúdo escolar/universitário (ex.: resolver integrais, explicar equações químicas, etc.).\n- **REDIRECIONAMENTO LITERAL E POLIDO:** Caso o estudante apresente dúvidas diretas de conteúdo conceitual, responda com gentileza:\n  *\"Meu papel principal é ajudar você a estruturar, organizar e planejar seus estudos e rotinas de forma acessível e eficiente. Não posso resolver exercícios ou explicar o conteúdo teórico diretamente, mas organizei um bloco dedicado no seu cronograma para você praticar esse tema. Gostaria de ajustar o tempo desse bloco?\"*\n- **TOM DE VOZ:** Claro, afetuoso, respeitoso, literal, desprovido de ironias, encorajador e altamente estruturado.\n\n---\n\n## 6. FORMATOS DE SAÍDA (Output Formatting)\n\n### Saída em Texto (Tabela Markdown no Chat)\nApresente o cronograma de estudos de maneira visual e tabular com as seguintes colunas obrigatórias:\n- **Dia / Turno**\n- **Horário**\n- **Matéria e Tópico**\n- **Metodologia Adaptada** (ex.: Estudo Ativo Bounded, Flashcards Leitner, Feynman com Hiperfoco)\n- **Critério de Conclusão (Definition of Done)** (meta atômica e verificável)\n- **Pausa Sensorial de Descompressão** (orientação prática de regulação sensorial)\n- **Status `[ ]`**\n\n### Saída Estruturada para Planilhas / Automação (`<excel_data>`)\nAo final de toda mensagem contendo um planejamento aprovado ou final, inclua OBRIGATORIAMENTE o bloco estruturado no formato JSON dentro da tag `<excel_data>`:\n\n```json\n<excel_data>\n{\n  \"titulo_plano\": \"Plano de Estudos Personalizado e Inclusivo - [Objetivo do Aluno]\",\n  \"resumo\": {\n    \"total_horas_semanais\": 10,\n    \"foco_principal\": \"Matemática e Biologia\",\n    \"horizonte\": \"Semanal\",\n    \"perfil_adaptativo\": \"TEA / Monotrópico (Blocos de 45m com Pausas Sensoriais e Amortecedor de Transição)\",\n    \"fundamentacao_teorica\": \"TEACCH (Mesibov), Monotropismo (Murray), Funções Executivas (Pellicano), Regulação Sensorial (Dunn), Carga Cognitiva (Sweller)\"\n  },\n  \"cronograma\": [\n    {\n      \"dia\": \"Segunda-feira\",\n      \"horario\": \"14:00 - 14:45\",\n      \"materia\": \"Matemática\",\n      \"topico\": \"Funções de 1º Grau\",\n      \"metodologia_adaptada\": \"Estudo Ativo Delimitado (3 exercícios com gabarito imediato)\",\n      \"definition_of_done\": \"Resolver os exercícios 1 a 3 da lista e registrar acertos\",\n      \"amortecedor_transicao\": \"Aviso de encerramento às 14:42 (organizar material)\",\n      \"status\": \"Pendente\"\n    },\n    {\n      \"dia\": \"Segunda-feira\",\n      \"horario\": \"14:45 - 15:00\",\n      \"materia\": \"Pausa Sensorial\",\n      \"topico\": \"Descompressão Neurosensorial\",\n      \"metodologia_adaptada\": \"Pausa Sensorial de Descompressão (Winnie Dunn)\",\n      \"definition_of_done\": \"15 minutos em penumbra, sem telas eletrônicas, hidratação e respiração calma\",\n      \"amortecedor_transicao\": \"N/A\",\n      \"status\": \"N/A\"\n    }\n  ]\n}\n</excel_data>\n```\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        440,
+        400
+      ],
+      "id": "9ea3903d-58e2-414c-929a-7aeb9b206eaf",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        320,
+        640
+      ],
+      "id": "a1c63e02-7ab6-4dd5-a53d-7349df3d4db6",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "0DqsAo7e4xlm6P5j",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        560,
+        800
+      ],
+      "id": "545fcc23-d14c-4a9b-bde8-ae9e4592eee9",
+      "name": "Embeddings OpenAI1",
+      "credentials": {
+        "openAiApi": {
+          "id": "0DqsAo7e4xlm6P5j",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        944,
+        0
+      ],
+      "id": "d3af9201-01d8-4ad9-8035-4bbc7ae8bc7d",
+      "name": "Supabase Vector Store",
+      "credentials": {
+        "supabaseApi": {
+          "id": "C9W3GhpJxskrwaTj",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Base de conhecimento pedagógico contendo artigos científicos sobre técnicas de estudo eficazes (Dunlosky et al.), teoria da carga cognitiva (Sweller), organização da instrução (Pashler et al.), diretrizes pedagógicas para TEA e neurodiversidade (TEACCH, Monotropismo, Funções Executivas - Pellicano, Processamento Sensorial - Dunn, UDL), diretrizes da BNCC e pedagogia da autonomia (Paulo Freire, Saviani). Use sempre que precisar de fundamentação teórica ou metodologias de ensino e aprendizagem.",
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        560,
+        640
+      ],
+      "id": "0f1f5bad-c894-42b7-b51d-c9389e968d6c",
+      "name": "Supabase Vector Store1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "C9W3GhpJxskrwaTj",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        440,
+        560
+      ],
+      "id": "5a55d9d7-5a38-4a61-ac19-5113b16ed2b6",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "eduplan",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -80,
+        400
+      ],
+      "id": "8e00f675-67de-472c-8cef-723d993dda52",
+      "name": "Webhook",
+      "webhookId": "1af42bfd-c5e6-48f8-b962-200bbbb83225"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={\n\"sessionId\": \n\"{{$json.body.sessionId}}\",\n\"action\": \"sendMessage\",\n\"chatInput\": \"{{$json.body.user_message}}\"\n} ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        160,
+        400
+      ],
+      "id": "7a611244-d887-4e7b-9ec2-ec11b13946b7",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        720,
+        400
+      ],
+      "id": "49a39b95-91d6-4922-898f-7f902ac4d84d",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "batchSize": 40,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        840,
+        -140
+      ],
+      "id": "e7b99c12-32a1-4a5f-8452-871d34e91245",
+      "name": "Loop Over Items"
+    }
+  ],
+  "connections": {
+    "GitHub": {
+      "main": [
+        [
+          {
+            "node": "Code - Converte JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Chunk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Converte JSON": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chunk": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI Upsert": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "GitHub",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store1",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store1": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "staticData": null,
+  "pinData": {},
+  "triggerCount": 0,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}

@@ -258,6 +258,20 @@
       "id": "517fa858-dd19-4ae2-b095-ad90e86304be",
       "name": "When chat message received",
       "webhookId": "378d7590-09d4-4c66-bad4-71c2d523ba67"
+    },
+    {
+      "parameters": {
+        "batchSize": 40,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        840,
+        -140
+      ],
+      "id": "e7b99c12-32a1-4a5f-8452-871d34e91245",
+      "name": "Loop Over Items"
     }
   ],
   "connections": {
@@ -309,7 +323,7 @@
       "main": [
         [
           {
-            "node": "SVS Upsert",
+            "node": "Loop Over Items",
             "type": "main",
             "index": 0
           }
@@ -388,6 +402,28 @@
           {
             "node": "Simple Vector Store1",
             "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
             "index": 0
           }
         ]
